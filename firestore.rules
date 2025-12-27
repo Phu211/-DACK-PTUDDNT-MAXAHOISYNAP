@@ -1,0 +1,745 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Check participant of a conversation
+    function isConversationParticipant(conversationId) {
+      return isSignedIn() &&
+        conversationId is string &&
+        exists(/databases/$(database)/documents/conversations/$(conversationId)) &&
+        get(/databases/$(database)/documents/conversations/$(conversationId))
+          .data.participantIds.hasAny([request.auth.uid]);
+    }
+
+    function isPostOwner() {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Allow any signed-in user to update only counter fields on a post
+    function isPostCountersUpdate() {
+      return isSignedIn() &&
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(
+          ['likesCount', 'commentsCount', 'sharesCount']
+        );
+    }
+
+    // Allow tagged user to remove themselves from tag (update removedTaggedUserIds)
+    function isTaggedUserRemovingSelf() {
+      return isSignedIn() &&
+        // User must be in taggedUserIds
+        request.auth.uid in resource.data.taggedUserIds &&
+        // User must not already be in removedTaggedUserIds
+        !(request.auth.uid in resource.data.removedTaggedUserIds) &&
+        // Only allow updating removedTaggedUserIds and updatedAt
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(
+          ['removedTaggedUserIds', 'updatedAt']
+        ) &&
+        // Ensure the user is being added to removedTaggedUserIds
+        request.auth.uid in request.resource.data.removedTaggedUserIds &&
+        // Ensure taggedUserIds is not changed
+        request.resource.data.taggedUserIds == resource.data.taggedUserIds;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Allow read if authenticated
+      allow read: if isSignedIn();
+      // Allow create/update if user is creating/updating their own document
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
+      // Allow delete only by the user themselves
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Posts collection
+    match /posts/{postId} {
+      // Allow read if authenticated
+      allow read: if isSignedIn();
+      // Allow create if authenticated and userId matches
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Allow update/delete if user owns the post, OR any user updates only counter fields, OR tagged user removes themselves
+      allow update: if isPostOwner() || isPostCountersUpdate() || isTaggedUserRemovingSelf();
+      allow delete: if isPostOwner();
+    }
+    
+    // Comments collection
+    match /comments/{commentId} {
+      // Allow read if authenticated
+      allow read: if request.auth != null;
+      // Allow create if authenticated and userId matches
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow update/delete if user owns the comment
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Likes collection (stores reactions: like, love, care, haha, wow, sad, angry)
+    match /likes/{likeId} {
+      // Allow read if authenticated
+      allow read: if request.auth != null;
+      // Allow create if authenticated and userId matches
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow update if user owns the reaction (for changing reaction type)
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow delete if user owns the reaction
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Follows collection
+    match /follows/{followId} {
+      // Allow read if authenticated
+      allow read: if request.auth != null;
+      // Allow create if authenticated and followerId matches
+      allow create: if request.auth != null && request.resource.data.followerId == request.auth.uid;
+      // Allow delete if user is the follower
+      allow delete: if request.auth != null && resource.data.followerId == request.auth.uid;
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      // Allow read if authenticated user is the owner of the notification
+      allow read: if request.auth != null &&
+        request.auth.uid == resource.data.userId;
+
+      // Allow create if authenticated and actorId (người thực hiện hành động) là user hiện tại
+      allow create: if request.auth != null &&
+        request.resource.data.actorId == request.auth.uid;
+
+      // Allow update/delete if the authenticated user owns the notification
+      allow update, delete: if request.auth != null &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // User settings collection
+    // Cho phép mọi user đã đăng nhập đọc cài đặt (dùng để kiểm tra quyền nhắn tin),
+    // nhưng chỉ owner mới được chỉnh sửa.
+    match /userSettings/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Sessions subcollection dưới mỗi user: theo dõi thiết bị / phiên đăng nhập
+    match /users/{userId}/sessions/{sessionId} {
+      // Chỉ chính chủ tài khoản mới xem / tạo / xóa được session của mình
+      allow read, write, delete: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Login history subcollection: lịch sử đăng nhập
+    match /users/{userId}/loginHistory/{loginId} {
+      // Chỉ chính chủ tài khoản mới xem / tạo được login history của mình
+      allow read, create: if request.auth != null &&
+        request.auth.uid == userId;
+      // Cho phép xóa để cleanup (chỉ owner)
+      allow delete: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Failed login attempts subcollection: theo dõi số lần đăng nhập sai
+    match /users/{userId}/failedLoginAttempts/{docId} {
+      // Cho phép đọc khi:
+      // 1. User đã đăng nhập và là chủ tài khoản (để check lockout sau khi đăng nhập)
+      // 2. Hoặc chưa đăng nhập (để check lockout trước khi đăng nhập - quan trọng!)
+      // Note: Không cần kiểm tra auth vì đây là thông tin công khai để check lockout
+      allow read: if true; // Cho phép đọc để check account lockout trước khi đăng nhập
+      
+      // Cho phép write chỉ khi user đã đăng nhập và là chủ tài khoản
+      // (để ghi nhận failed attempts hoặc clear khi đăng nhập thành công)
+      allow write: if request.auth != null &&
+        request.auth.uid == userId;
+      
+      // Cho phép xóa khi đăng nhập thành công
+      allow delete: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Suspicious activities subcollection: theo dõi hoạt động đáng ngờ
+    match /users/{userId}/suspiciousActivities/{activityId} {
+      // Chỉ chính chủ tài khoản mới xem / tạo được suspicious activities của mình
+      allow read, create: if request.auth != null &&
+        request.auth.uid == userId;
+      // Cho phép cập nhật để đánh dấu đã xử lý
+      allow update: if request.auth != null &&
+        request.auth.uid == userId;
+      // Cho phép xóa để cleanup
+      allow delete: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Recovery codes subcollection: mã khôi phục tài khoản
+    match /users/{userId}/recoveryCodes/{codeId} {
+      // Chỉ chính chủ tài khoản mới xem / tạo được recovery codes của mình
+      allow read, create: if request.auth != null &&
+        request.auth.uid == userId;
+      // Cho phép cập nhật để đánh dấu đã sử dụng
+      allow update: if request.auth != null &&
+        request.auth.uid == userId;
+      // Cho phép xóa để cleanup
+      allow delete: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Two-factor authentication settings
+    match /users/{userId}/twoFactorAuth/{docId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // IP whitelist subcollection
+    match /users/{userId}/ipWhitelist/{ipAddress} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Security settings subcollection
+    match /users/{userId}/securitySettings/{docId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Security questions subcollection
+    match /users/{userId}/securityQuestions/{questionId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Password reset tokens subcollection
+    match /users/{userId}/passwordResetTokens/{tokenId} {
+      allow read, write: if request.auth != null &&
+        request.auth.uid == userId;
+    }
+
+    // Rate limiting collections (public read for checking, write restricted)
+    match /rateLimits/{docId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Chỉ server/client code mới được write
+    }
+
+    match /rateLimits/{docId}/{subcollection}/{itemId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Chỉ server/client code mới được write
+    }
+
+    match /passwordResetRequests/{requestId} {
+      allow read: if false; // Không cho đọc để bảo mật
+      allow write: if false; // Chỉ server/client code mới được write
+    }
+
+    // Message requests collection
+    match /messageRequests/{requestId} {
+      allow create: if request.auth != null &&
+        request.resource.data.senderId == request.auth.uid;
+
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.senderId ||
+         request.auth.uid == resource.data.receiverId);
+
+      allow update, delete: if request.auth != null &&
+        request.auth.uid == resource.data.receiverId;
+    }
+
+    // Messages collection - Bảo mật nghiêm ngặt
+    match /messages/{messageId} {
+      // Helper function để kiểm tra user là member của group
+      function isGroupMember(groupId) {
+        return isSignedIn() &&
+          groupId is string &&
+          exists(/databases/$(database)/documents/groups/$(groupId)) &&
+          get(/databases/$(database)/documents/groups/$(groupId))
+            .data.memberIds.hasAny([request.auth.uid]);
+      }
+      
+      // Helper function để kiểm tra user là creator của group
+      function isGroupCreator(groupId) {
+        return isSignedIn() &&
+          groupId is string &&
+          exists(/databases/$(database)/documents/groups/$(groupId)) &&
+          get(/databases/$(database)/documents/groups/$(groupId))
+            .data.creatorId == request.auth.uid;
+      }
+      
+      // Chỉ cho phép người trong conversation hoặc là sender/receiver đọc tin nhắn
+      // Ưu tiên kiểm tra senderId và receiverId trước (đơn giản và nhanh nhất)
+      allow read: if isSignedIn() &&
+        (
+          // Direct chat: dựa vào sender/receiver (kiểm tra trước vì đơn giản nhất)
+          request.auth.uid == resource.data.senderId ||
+          request.auth.uid == resource.data.receiverId ||
+          // Group chat: dựa vào groupId và memberIds hoặc creator
+          (resource.data.groupId != null &&
+            (isGroupMember(resource.data.groupId) ||
+             isGroupCreator(resource.data.groupId))) ||
+          // Fallback: dựa vào participantIds của conversation (kiểm tra sau)
+          (resource.data.conversationId != null &&
+            isConversationParticipant(resource.data.conversationId))
+        );
+      
+      // Allow create for:
+      // 1. Direct messages: senderId == auth.uid && receiverId != null && receiverId != "" && receiverId != senderId && (groupId không tồn tại hoặc null)
+      // 2. Group messages: senderId == auth.uid && groupId != null && user is group member (receiverId có thể null, empty, hoặc bất kỳ giá trị nào)
+      // Explicitly allow all message fields including media and location fields
+      allow create: if isSignedIn() &&
+        request.resource.data.senderId == request.auth.uid &&
+        request.resource.data.senderId is string &&
+        request.resource.data.senderId != "" &&
+        (
+          // Direct message case: phải có receiverId hợp lệ (không null, không empty, không phải chính mình)
+          // Và KHÔNG có groupId (kiểm tra cả trường hợp field không tồn tại và null)
+          ((!('groupId' in request.resource.data) || request.resource.data.groupId == null) &&
+           request.resource.data.receiverId != null &&
+           request.resource.data.receiverId is string &&
+           request.resource.data.receiverId != "" &&
+           request.resource.data.receiverId != request.auth.uid) ||
+          // Group message case: phải có groupId hợp lệ và user là member hoặc creator
+          // receiverId có thể null, empty string, hoặc bất kỳ giá trị nào cho group messages
+          ('groupId' in request.resource.data &&
+           request.resource.data.groupId != null &&
+           request.resource.data.groupId is string &&
+           request.resource.data.groupId != "" &&
+           exists(/databases/$(database)/documents/groups/$(request.resource.data.groupId)) &&
+           (isGroupMember(request.resource.data.groupId) ||
+            isGroupCreator(request.resource.data.groupId)))
+        );
+      
+      // Cho phép update các trường thông thường
+      // Nếu update isPinned/pinnedAt thì phải là sender hoặc receiver
+      // Nếu update live location thì phải là sender (người gửi location)
+      allow update: if isSignedIn() && (
+        // Update các trường thông thường (không có isPinned/pinnedAt, không có live location)
+        (request.resource.data.diff(resource.data).changedKeys().hasOnly(
+          ['isRead', 'status', 'deliveredAt', 'readAt', 'reactions']
+        )) ||
+        // Update isPinned/pinnedAt chỉ khi user là sender hoặc receiver
+        // Cho phép cả direct và group messages
+        (request.resource.data.diff(resource.data).changedKeys().hasAny(
+          ['isPinned', 'pinnedAt']
+        ) && (
+          request.auth.uid == resource.data.senderId ||
+          (resource.data.receiverId != null && request.auth.uid == resource.data.receiverId) ||
+          (resource.data.groupId != null && (
+            isGroupMember(resource.data.groupId) ||
+            isGroupCreator(resource.data.groupId)
+          ))
+        ) &&
+         request.resource.data.diff(resource.data).changedKeys().hasOnly(
+          ['isRead', 'status', 'deliveredAt', 'readAt', 'reactions', 'isPinned', 'pinnedAt']
+        )) ||
+        // Update live location fields chỉ khi user là sender (người gửi location)
+        // Cho phép update: isLiveLocation, locationExpiresAt, latitude, longitude, locationAddress
+        // Áp dụng cho cả direct message và group message
+        // Cho phép update live location fields cùng với các trường thông thường khác
+        (request.auth.uid == resource.data.senderId &&
+         request.resource.data.diff(resource.data).changedKeys().hasAny(
+          ['isLiveLocation', 'locationExpiresAt', 'latitude', 'longitude', 'locationAddress']
+         ) &&
+         // Không cho phép update các trường quan trọng như senderId, receiverId, groupId, conversationId, createdAt
+         !request.resource.data.diff(resource.data).changedKeys().hasAny(
+          ['senderId', 'receiverId', 'groupId', 'conversationId', 'createdAt', 'content', 'imageUrl', 'videoUrl', 'audioUrl', 'gifUrl', 'audioDuration']
+        ))
+      );
+      
+      // Cho phép xóa message nếu:
+      // 1. User là sender (xóa tin nhắn của chính mình)
+      // 2. User là participant trong conversation và đang xóa conversation
+      //    (kiểm tra bằng cách xem conversation có tồn tại và user có trong participantIds không)
+      allow delete: if isSignedIn() && (
+        request.auth.uid == resource.data.senderId ||
+        (resource.data.conversationId != null &&
+         isConversationParticipant(resource.data.conversationId))
+      );
+    }
+
+    // Conversations collection
+    match /conversations/{conversationId} {
+      // Helper function để kiểm tra user là participant của conversation
+      function isConversationParticipant() {
+        return isSignedIn() &&
+          resource != null &&
+          request.auth.uid in resource.data.participantIds;
+      }
+      
+      // Helper function để kiểm tra user là member của group (nếu conversation có groupId)
+      function isGroupConversationMember() {
+        return isSignedIn() &&
+          resource != null &&
+          resource.data.groupId != null &&
+          resource.data.groupId is string &&
+          exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
+          get(/databases/$(database)/documents/groups/$(resource.data.groupId))
+            .data.memberIds.hasAny([request.auth.uid]);
+      }
+      
+      // Helper function để kiểm tra user là creator của group (nếu conversation có groupId)
+      function isGroupConversationCreator() {
+        return isSignedIn() &&
+          resource != null &&
+          resource.data.groupId != null &&
+          resource.data.groupId is string &&
+          exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
+          get(/databases/$(database)/documents/groups/$(resource.data.groupId))
+            .data.creatorId == request.auth.uid;
+      }
+      
+      // Chỉ participant mới được đọc conversation (bao gồm group members và creator)
+      // CRITICAL FIX: Cho phép read cả khi document chưa tồn tại (resource == null)
+      // để client có thể kiểm tra và tạo lại conversation mà không bị PERMISSION_DENIED.
+      allow read: if isSignedIn() && (
+        // Trường hợp conversation chưa tồn tại: cho phép read (không trả về data thật)
+        resource == null ||
+        // Trường hợp conversation đã tồn tại: chỉ cho phép participant / group member / creator
+        (resource != null &&
+         (isConversationParticipant() || 
+          isGroupConversationMember() || 
+          isGroupConversationCreator()))
+      );
+      
+      // Tạo conversation: 
+      // - User phải là 1 trong participants
+      // - Phải có ít nhất 2 participants (cho cả 1-1 và group chat)
+      // - Nếu là group chat (có groupId), phải có ít nhất 2 participants
+      allow create: if isSignedIn() && 
+        request.auth.uid in request.resource.data.participantIds &&
+        request.resource.data.participantIds.size() >= 2;
+      
+      // Cập nhật: chỉ participant hoặc group member hoặc creator, không đổi participantIds
+      // Cho phép update các trường thông thường (lastMessageId, lastMessageContent, unreadCounts, etc.)
+      // CRITICAL: Cho phép update deletedBy để user có thể xóa conversation ở phía mình
+      allow update: if isSignedIn() && 
+        (isConversationParticipant() || 
+         isGroupConversationMember() || 
+         isGroupConversationCreator()) &&
+        request.resource.data.participantIds == resource.data.participantIds &&
+        // Chỉ cho phép update các trường được phép, không cho phép thay đổi participantIds
+        request.resource.data.diff(resource.data).changedKeys().hasOnly(
+          ['lastMessageId', 'lastMessageContent', 'lastMessageNonce', 'lastMessageSenderId', 
+           'lastMessageTime', 'unreadCounts', 'updatedAt', 'isPinned', 'pinnedAt', 'deletedBy']
+        );
+      
+      // Xóa: chỉ participant
+      allow delete: if isSignedIn() && 
+        request.auth.uid in resource.data.participantIds;
+    }
+
+    // Saved posts collection
+    match /savedPosts/{savedPostId} {
+      // Allow read if document doesn't exist (for checking) or user owns it
+      allow get: if request.auth != null && 
+        (resource == null || request.auth.uid == resource.data.userId);
+      // Allow delete if user owns the saved post
+      allow delete: if request.auth != null && 
+        resource != null &&
+        request.auth.uid == resource.data.userId;
+      // Allow create if authenticated and userId matches
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      // Chỉ cho phép list các saved posts của chính mình
+      // Note: Firestore security rules không thể kiểm tra query filters trong list operation
+      // Code phải sử dụng query với where('userId', '==', request.auth.uid) để đảm bảo chỉ lấy posts của user hiện tại
+      // Rule này chỉ kiểm tra authentication, query filter sẽ đảm bảo chỉ trả về documents của user hiện tại
+      allow list: if request.auth != null;
+    }
+
+    // Hidden posts collection
+    match /hiddenPosts/{hiddenPostId} {
+      // Allow read/delete if user owns the hidden post (check if document exists first)
+      allow read, delete: if request.auth != null && 
+        resource != null &&
+        request.auth.uid == resource.data.userId;
+      // Allow create if authenticated and userId matches
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      // Special case for temporarily hiding users (document ID starts with "user_")
+      allow read, delete: if request.auth != null && 
+        hiddenPostId.matches('user_.*') &&
+        resource != null &&
+        request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && 
+        hiddenPostId.matches('user_.*') &&
+        request.resource.data.userId == request.auth.uid;
+    }
+
+    // Reports collection
+    match /reports/{reportId} {
+      // Allow create if authenticated (anyone can report)
+      allow create: if request.auth != null && 
+        request.resource.data.reporterId == request.auth.uid;
+      // Allow read only by the reporter
+      allow read: if request.auth != null && 
+        request.auth.uid == resource.data.reporterId;
+    }
+
+    // Blocks collection
+    match /blocks/{blockId} {
+      // Allow read if user is blocker hoặc người bị chặn (để kiểm tra quan hệ)
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.blockerId ||
+         request.auth.uid == resource.data.blockedId);
+
+      // Allow delete chỉ khi là blocker
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.blockerId;
+      // Allow create if authenticated and blockerId matches
+      allow create: if request.auth != null && 
+        request.resource.data.blockerId == request.auth.uid;
+    }
+
+    // Friend requests collection
+    match /friendRequests/{requestId} {
+      // Allow read if user is sender or receiver
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.senderId || 
+         request.auth.uid == resource.data.receiverId);
+      // Allow create if authenticated and senderId matches
+      allow create: if request.auth != null && 
+        request.resource.data.senderId == request.auth.uid;
+      // Allow update if user is the receiver (chấp nhận / từ chối)
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.receiverId;
+      // Cho phép người gửi tự hủy lời mời (xóa doc)
+      allow delete: if request.auth != null &&
+        request.auth.uid == resource.data.senderId;
+    }
+
+    // Friends collection
+    match /friends/{friendId} {
+      // Chỉ cho phép 2 người trong quan hệ bạn bè đọc record này
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.userId1 ||
+         request.auth.uid == resource.data.userId2);
+      // Allow create nếu người dùng hiện tại là 1 trong 2 người bạn
+      allow create: if request.auth != null && 
+        (request.resource.data.userId1 == request.auth.uid || 
+         request.resource.data.userId2 == request.auth.uid);
+      // Allow delete if user is part of the friendship
+      allow delete: if request.auth != null && 
+        (request.auth.uid == resource.data.userId1 || 
+         request.auth.uid == resource.data.userId2);
+    }
+
+    // Stories collection
+    match /stories/{storyId} {
+      // Cho phép mọi user đã đăng nhập đọc story.
+      // Quyền riêng tư chi tiết (public/friends/onlyMe/hiddenUsers)
+      // đã được lọc thêm ở client trong StoryService.
+      allow read: if request.auth != null;
+
+      // Cho phép tạo nếu userId khớp với người đăng
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+
+      // Chỉ chủ story mới được xóa
+      allow delete: if request.auth != null && 
+        resource != null &&
+        request.auth.uid == resource.data.userId;
+    }
+
+    // Story views collection
+    match /storyViews/{viewId} {
+      // Chỉ cho phép viewer hoặc chủ story xem lượt xem
+      allow read: if request.auth != null &&
+        resource != null &&
+        (request.auth.uid == resource.data.viewerId ||
+         request.auth.uid == resource.data.storyOwnerId);
+      // Người xem chỉ được tạo/ghi lại lượt xem của chính mình
+      allow create: if request.auth != null &&
+        request.resource.data.viewerId == request.auth.uid;
+      // Cho phép xóa nếu là viewer hoặc chủ story (để dọn expired)
+      allow delete: if request.auth != null &&
+        (request.auth.uid == resource.data.viewerId ||
+         request.auth.uid == resource.data.storyOwnerId);
+    }
+
+    // Story reactions collection
+    match /storyReactions/{reactionId} {
+      // Chỉ cho phép người react hoặc chủ story xem reaction
+      allow read: if request.auth != null &&
+        resource != null &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.storyOwnerId);
+      // Khi tạo phải khớp userId
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      // Khi cập nhật hoặc xóa dựa trên owner hiện tại của reaction
+      allow update, delete: if request.auth != null &&
+        resource != null &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Groups collection
+    match /groups/{groupId} {
+      // Allow read if group is public or user is a member
+      allow read: if request.auth != null && 
+        (resource.data.isPublic == true || 
+         request.auth.uid in resource.data.memberIds);
+      // Allow create if authenticated
+      allow create: if request.auth != null && 
+        request.resource.data.creatorId == request.auth.uid;
+      // Allow update if user is admin or moderator
+      allow update: if request.auth != null && 
+        (request.auth.uid == resource.data.creatorId ||
+         resource.data.memberRoles[request.auth.uid] == 'admin' ||
+         resource.data.memberRoles[request.auth.uid] == 'moderator');
+      // Allow delete if user is creator
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.creatorId;
+    }
+
+    // Typing subcollection under conversations
+    match /conversations/{conversationId}/typing/{typingId} {
+      allow read: if request.auth != null &&
+        (resource == null ||
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds);
+      allow write: if request.auth != null &&
+        request.auth.uid == typingId &&
+        request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+    }
+
+    // Mutes subcollection under conversations
+    match /conversations/{conversationId}/mutes/{userId} {
+      allow read: if request.auth != null &&
+        request.auth.uid == userId &&
+        request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+      allow write: if request.auth != null &&
+        request.auth.uid == userId &&
+        request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
+    }
+
+    // Videos collection
+    match /videos/{videoId} {
+      // Allow read if authenticated
+      allow read: if request.auth != null;
+      // Allow create if authenticated and userId matches
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      // Allow update/delete if user owns the video
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Pages collection
+    match /pages/{pageId} {
+      // Allow read if authenticated
+      allow read: if request.auth != null;
+      // Allow create if authenticated and creatorId matches
+      allow create: if request.auth != null && 
+        request.resource.data.creatorId == request.auth.uid;
+      // Allow update/delete if user is creator
+      allow update, delete: if request.auth != null && 
+        resource.data.creatorId == request.auth.uid;
+    }
+
+    // Products collection
+    match /products/{productId} {
+      // Allow read if authenticated
+      allow read: if request.auth != null;
+      // Allow create if authenticated and sellerId matches
+      allow create: if request.auth != null && 
+        request.resource.data.sellerId == request.auth.uid;
+      // Allow update/delete if user is seller
+      allow update, delete: if request.auth != null && 
+        resource.data.sellerId == request.auth.uid;
+    }
+
+    // User interactions collection (for recommendations)
+    match /userInteractions/{interactionId} {
+      // Allow read if user owns the interaction
+      allow read: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      // Allow create if authenticated and userId matches
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+    }
+
+    // Call notifications collection
+    match /callNotifications/{notificationId} {
+      // Allow read if user is caller or recipient
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.recipientUserId ||
+         request.auth.uid == resource.data.callerId);
+      // Allow create if authenticated and callerId matches
+      allow create: if request.auth != null &&
+        request.resource.data.callerId == request.auth.uid;
+      // Allow update/delete if user is caller or recipient
+      allow update, delete: if request.auth != null &&
+        (resource.data.recipientUserId == request.auth.uid ||
+         resource.data.callerId == request.auth.uid);
+    }
+
+    // Viewed posts collection
+    match /viewedPosts/{viewedPostId} {
+      // Allow read if authenticated user is the owner
+      allow read: if request.auth != null &&
+        request.auth.uid == resource.data.userId;
+      // Allow create if authenticated and userId matches
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      // Allow delete if user owns the viewed post record
+      allow delete: if request.auth != null &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Activity logs collection
+    match /activityLogs/{activityId} {
+      // Cho phép đọc nếu user là owner (userId) hoặc target (targetUserId)
+      // Firestore sẽ tự động filter các document không match khi query
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.userId ||
+         request.auth.uid == resource.data.targetUserId);
+      // Cho phép tạo activity log nếu userId khớp (người thực hiện hành động)
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      // Cho phép update/delete nếu user là owner hoặc target
+      allow update, delete: if request.auth != null &&
+        (resource.data.userId == request.auth.uid ||
+         resource.data.targetUserId == request.auth.uid);
+    }
+
+    // Highlights collection (story highlights)
+    match /highlights/{highlightId} {
+      // Cho phép đọc highlights của bất kỳ user nào (để hiển thị trên profile)
+      allow read: if request.auth != null;
+      // Cho phép tạo highlight nếu userId khớp
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      // Cho phép update/delete nếu user là owner
+      allow update, delete: if request.auth != null &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Badges collection (achievement badges)
+    match /badges/{badgeId} {
+      // Chỉ cho phép user đọc badges của chính mình
+      allow read: if request.auth != null &&
+        request.auth.uid == resource.data.userId;
+      // Cho phép tạo badge nếu userId khớp
+      allow create: if request.auth != null &&
+        request.resource.data.userId == request.auth.uid;
+      // Cho phép update/delete nếu user là owner
+      allow update, delete: if request.auth != null &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Profile views collection
+    match /profileViews/{viewId} {
+      // Cho phép đọc nếu user là viewer hoặc profile owner
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.viewerUserId ||
+         request.auth.uid == resource.data.profileUserId);
+      // Cho phép tạo profile view nếu viewerUserId khớp
+      allow create: if request.auth != null &&
+        request.resource.data.viewerUserId == request.auth.uid;
+      // Cho phép xóa nếu user là viewer hoặc profile owner
+      allow delete: if request.auth != null &&
+        (request.auth.uid == resource.data.viewerUserId ||
+         request.auth.uid == resource.data.profileUserId);
+    }
+
+    // Tagged posts collection (posts where user is tagged)
+    // Note: Tagged posts are stored in posts collection with taggedUserIds field
+    // This collection is for tracking tagged relationships separately if needed
+    // For now, we rely on posts collection rules
+  }
+}
+

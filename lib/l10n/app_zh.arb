@@ -1,0 +1,148 @@
+{
+  "appTitle": "Synap",
+  "homeTitle": "主页",
+  "storiesYourStory": "你的动态",
+  "profileTitle": "个人主页",
+  "editProfile": "编辑个人主页",
+  "friends": "朋友",
+  "viewAllFriends": "查看所有朋友",
+  "noPosts": "还没有帖子",
+  "savedTitle": "已保存",
+  "savedEmptyTitle": "还没有保存的帖子",
+  "savedEmptyDesc": "保存帖子以便稍后查看",
+  "languageTitle": "语言",
+  "languageSelectPrompt": "选择应用语言",
+  "languageSelectDesc": "更改语言将作用于整个应用界面",
+  "languageAutoTranslate": "自动翻译内容",
+  "languageAutoTranslateDesc": "自动翻译帖子和评论",
+  "languageInfo": "部分功能可能尚未完全翻译",
+  "retry": "重试",
+  "loginRequired": "请登录",
+  "@loginRequired": {},
+  "postComments": "{count} 条评论",
+  "@postComments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "postPlayVideo": "播放视频",
+  "postRemoveTag": "移除标签",
+  "postRemoveTagConfirm": "您确定要从此帖子中移除您的标签吗？该帖子将不再出现在您的\"已标记\"部分。",
+  "postRemoveTagSuccess": "已从帖子中移除标签",
+  "postSave": "保存帖子",
+  "postUnsave": "从已保存项目中移除",
+  "postSaveDescription": "添加到已保存项目",
+  "postSavedSuccess": "帖子已保存",
+  "postUnsavedSuccess": "帖子已取消保存",
+  "postHiddenSuccess": "帖子已隐藏",
+  "postTemporarilyHideUser": "临时隐藏用户",
+  "postTemporarilyHideUserConfirm": "临时隐藏 {name} 30 天",
+  "@postTemporarilyHideUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postTemporarilyHideUserSuccess": "用户已临时隐藏 30 天",
+  "postHideAllFromUser": "隐藏所有帖子",
+  "postHideAllFromUserConfirm": "隐藏来自 {name} 的所有内容",
+  "@postHideAllFromUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postHideAllFromUserSuccess": "已隐藏来自此用户的所有帖子",
+  "postBlockUser": "屏蔽用户",
+  "postBlockUserConfirm": "屏蔽 {name} 的个人主页",
+  "@postBlockUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postBlockUserSuccess": "用户已屏蔽",
+  "postDeleteSuccess": "帖子已删除",
+  "postShare": "分享帖子",
+  "postShareToStory": "分享到您的动态",
+  "postShareToProfile": "分享到个人主页",
+  "postShareToProfileSuccess": "帖子已分享到个人主页",
+  "postShareToStorySuccess": "帖子已分享到您的动态",
+  "postTaggedUsers": "标记了 {users}",
+  "@postTaggedUsers": {
+    "placeholders": {
+      "users": {
+        "type": "String"
+      }
+    }
+  },
+  "timeAgoDays": "{days} 天前",
+  "@timeAgoDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoHours": "{hours} 小时前",
+  "@timeAgoHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoMinutes": "{minutes} 分钟前",
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoJustNow": "刚刚",
+  "postShareError": "无法分享帖子",
+  "postReactionError": "无法对帖子做出反应",
+  "postReactionDisplayError": "无法显示反应",
+  "postNoReactions": "还没有反应",
+  "postAllReactions": "所有反应",
+  "commentEdit": "编辑评论",
+  "commentDelete": "删除评论",
+  "commentDeleteConfirm": "您确定要删除此评论吗？",
+  "commentUpdatedSuccess": "评论已更新",
+  "commentUpdateError": "更新评论时出错",
+  "commentEdited": "• 已编辑",
+  "createPostEditTitle": "编辑帖子",
+  "createPostContentRequired": "请输入内容或选择图片/视频/GIF",
+  "createPostAlbumFeature": "相册功能正在开发中",
+  "createPostUploadingImages": "正在上传图片...",
+  "createPostUploadingVideo": "正在上传视频...",
+  "createPostProcessing": "正在处理...",
+  "createPostUploadProgress": "{percent}% 完成",
+  "@createPostUploadProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "aiAssistantGetSuggestions": "获取 AI 建议",
+  "aiAssistantLoading": "加载中...",
+  "aiAssistantTitle": "AI 建议",
+  "aiAssistantCaption": "改进的标题",
+  "aiAssistantHashtags": "建议的标签",
+  "aiAssistantTranslation": "翻译",
+  "aiAssistantSentiment": "情感分析",
+  "aiAssistantCaptionApplied": "标题已应用",
+  "aiAssistantHashtagsApplied": "标签已添加",
+  "aiAssistantTranslationApplied": "翻译已应用",
+  "aiAssistantEmptyContent": "请输入内容或选择图片以获取 AI 建议",
+  "aiAssistantError": "无法生成建议。请重试。",
+  "aiAssistantLoadError": "加载 AI 建议时出错"
+}
+

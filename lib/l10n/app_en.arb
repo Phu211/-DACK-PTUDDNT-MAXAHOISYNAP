@@ -1,0 +1,148 @@
+{
+  "appTitle": "Synap",
+  "homeTitle": "Home",
+  "storiesYourStory": "Your story",
+  "profileTitle": "Profile",
+  "editProfile": "Edit profile",
+  "friends": "Friends",
+  "viewAllFriends": "View all friends",
+  "noPosts": "No posts yet",
+  "savedTitle": "Saved",
+  "savedEmptyTitle": "No saved posts",
+  "savedEmptyDesc": "Save posts to view them later",
+  "languageTitle": "Language",
+  "languageSelectPrompt": "Choose the app language",
+  "languageSelectDesc": "Language change applies to the whole app",
+  "languageAutoTranslate": "Auto translate content",
+  "languageAutoTranslateDesc": "Automatically translate posts and comments",
+  "languageInfo": "Some features might not be translated yet",
+  "retry": "Retry",
+  "loginRequired": "Please log in",
+  "@loginRequired": {},
+  "postComments": "{count} comments",
+  "@postComments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "postPlayVideo": "Play video",
+  "postRemoveTag": "Remove tag",
+  "postRemoveTagConfirm": "Are you sure you want to remove your tag from this post? The post will no longer appear in your \"Tagged\" section.",
+  "postRemoveTagSuccess": "Tag removed from post",
+  "postSave": "Save post",
+  "postUnsave": "Remove from saved items",
+  "postSaveDescription": "Add to saved items",
+  "postSavedSuccess": "Post saved",
+  "postUnsavedSuccess": "Post unsaved",
+  "postHiddenSuccess": "Post hidden",
+  "postTemporarilyHideUser": "Temporarily hide user",
+  "postTemporarilyHideUserConfirm": "Temporarily hide {name} for 30 days",
+  "@postTemporarilyHideUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postTemporarilyHideUserSuccess": "User temporarily hidden for 30 days",
+  "postHideAllFromUser": "Hide all posts",
+  "postHideAllFromUserConfirm": "Hide all from {name}",
+  "@postHideAllFromUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postHideAllFromUserSuccess": "All posts from this user have been hidden",
+  "postBlockUser": "Block user",
+  "postBlockUserConfirm": "Block {name}'s profile",
+  "@postBlockUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postBlockUserSuccess": "User blocked",
+  "postDeleteSuccess": "Post deleted",
+  "postShare": "Share post",
+  "postShareToStory": "Share to your story",
+  "postShareToProfile": "Share to profile",
+  "postShareToProfileSuccess": "Post shared to profile",
+  "postShareToStorySuccess": "Post shared to your story",
+  "postTaggedUsers": "Tagged {users}",
+  "@postTaggedUsers": {
+    "placeholders": {
+      "users": {
+        "type": "String"
+      }
+    }
+  },
+  "timeAgoDays": "{days} days ago",
+  "@timeAgoDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoHours": "{hours} hours ago",
+  "@timeAgoHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoMinutes": "{minutes} minutes ago",
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoJustNow": "Just now",
+  "postShareError": "Cannot share post",
+  "postReactionError": "Cannot react to post",
+  "postReactionDisplayError": "Cannot display reactions",
+  "postNoReactions": "No reactions yet",
+  "postAllReactions": "All reactions",
+  "commentEdit": "Edit comment",
+  "commentDelete": "Delete comment",
+  "commentDeleteConfirm": "Are you sure you want to delete this comment?",
+  "commentUpdatedSuccess": "Comment updated",
+  "commentUpdateError": "Error updating comment",
+  "commentEdited": "• Edited",
+  "createPostEditTitle": "Edit post",
+  "createPostContentRequired": "Please enter content or select image/video/GIF",
+  "createPostAlbumFeature": "Album feature is under development",
+  "createPostUploadingImages": "Uploading images...",
+  "createPostUploadingVideo": "Uploading video...",
+  "createPostProcessing": "Processing...",
+  "createPostUploadProgress": "{percent}% Complete",
+  "@createPostUploadProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "aiAssistantGetSuggestions": "Get AI suggestions",
+  "aiAssistantLoading": "Loading...",
+  "aiAssistantTitle": "AI Suggestions",
+  "aiAssistantCaption": "Improved caption",
+  "aiAssistantHashtags": "Suggested hashtags",
+  "aiAssistantTranslation": "Translation",
+  "aiAssistantSentiment": "Sentiment analysis",
+  "aiAssistantCaptionApplied": "Caption applied",
+  "aiAssistantHashtagsApplied": "Hashtags added",
+  "aiAssistantTranslationApplied": "Translation applied",
+  "aiAssistantEmptyContent": "Please enter content or select an image to get AI suggestions",
+  "aiAssistantError": "Cannot generate suggestions. Please try again.",
+  "aiAssistantLoadError": "Error loading AI suggestions"
+}
+

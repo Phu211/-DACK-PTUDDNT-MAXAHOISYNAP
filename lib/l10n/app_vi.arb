@@ -1,0 +1,148 @@
+{
+  "appTitle": "Synap",
+  "homeTitle": "Trang chủ",
+  "storiesYourStory": "Tin của bạn",
+  "profileTitle": "Trang cá nhân",
+  "editProfile": "Chỉnh sửa trang cá nhân",
+  "friends": "Bạn bè",
+  "viewAllFriends": "Xem tất cả bạn bè",
+  "noPosts": "Chưa có bài viết nào",
+  "savedTitle": "Đã lưu",
+  "savedEmptyTitle": "Chưa có bài viết nào được lưu",
+  "savedEmptyDesc": "Lưu bài viết để xem lại sau",
+  "languageTitle": "Ngôn ngữ",
+  "languageSelectPrompt": "Chọn ngôn ngữ cho ứng dụng",
+  "languageSelectDesc": "Thay đổi ngôn ngữ sẽ áp dụng cho toàn bộ giao diện ứng dụng",
+  "languageAutoTranslate": "Tự động dịch nội dung",
+  "languageAutoTranslateDesc": "Tự động dịch bài viết và bình luận",
+  "languageInfo": "Một số tính năng có thể chưa được dịch",
+  "retry": "Thử lại",
+  "loginRequired": "Vui lòng đăng nhập",
+  "@loginRequired": {},
+  "postComments": "{count} bình luận",
+  "@postComments": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "postPlayVideo": "Phát video",
+  "postRemoveTag": "Gỡ thẻ",
+  "postRemoveTagConfirm": "Bạn có chắc chắn muốn gỡ thẻ khỏi bài viết này? Bài viết sẽ không hiển thị trong mục \"Được gắn thẻ\" của bạn nữa.",
+  "postRemoveTagSuccess": "Đã gỡ thẻ khỏi bài viết",
+  "postSave": "Lưu bài viết",
+  "postUnsave": "Xóa khỏi danh sách các mục đã lưu.",
+  "postSaveDescription": "Thêm vào danh sách các mục đã lưu.",
+  "postSavedSuccess": "Đã lưu bài viết",
+  "postUnsavedSuccess": "Đã bỏ lưu bài viết",
+  "postHiddenSuccess": "Đã ẩn bài viết",
+  "postTemporarilyHideUser": "Tạm ẩn người dùng",
+  "postTemporarilyHideUserConfirm": "Tạm ẩn {name} trong 30 ngày",
+  "@postTemporarilyHideUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postTemporarilyHideUserSuccess": "Đã tạm ẩn người dùng trong 30 ngày",
+  "postHideAllFromUser": "Ẩn tất cả bài viết",
+  "postHideAllFromUserConfirm": "Ẩn tất cả từ {name}",
+  "@postHideAllFromUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postHideAllFromUserSuccess": "Đã ẩn tất cả bài viết từ người dùng này",
+  "postBlockUser": "Chặn người dùng",
+  "postBlockUserConfirm": "Chặn trang cá nhân của {name}",
+  "@postBlockUserConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "postBlockUserSuccess": "Đã chặn người dùng",
+  "postDeleteSuccess": "Đã xóa bài viết",
+  "postShare": "Chia sẻ bài viết",
+  "postShareToStory": "Chia sẻ lên tin của bạn",
+  "postShareToProfile": "Chia sẻ lên trang cá nhân",
+  "postShareToProfileSuccess": "Đã chia sẻ bài viết lên trang cá nhân",
+  "postShareToStorySuccess": "Đã chia sẻ bài viết lên tin của bạn",
+  "postTaggedUsers": "Đã gắn thẻ {users}",
+  "@postTaggedUsers": {
+    "placeholders": {
+      "users": {
+        "type": "String"
+      }
+    }
+  },
+  "timeAgoDays": "{days} ngày trước",
+  "@timeAgoDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoHours": "{hours} giờ trước",
+  "@timeAgoHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoMinutes": "{minutes} phút trước",
+  "@timeAgoMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "timeAgoJustNow": "Vừa xong",
+  "postShareError": "Không thể chia sẻ bài viết",
+  "postReactionError": "Không thể bày tỏ cảm xúc",
+  "postReactionDisplayError": "Không thể hiển thị bày tỏ cảm xúc",
+  "postNoReactions": "Chưa có người nào",
+  "postAllReactions": "Tất cả cảm xúc",
+  "commentEdit": "Chỉnh sửa bình luận",
+  "commentDelete": "Xóa bình luận",
+  "commentDeleteConfirm": "Bạn có chắc chắn muốn xóa bình luận này?",
+  "commentUpdatedSuccess": "Đã cập nhật bình luận",
+  "commentUpdateError": "Lỗi cập nhật bình luận",
+  "commentEdited": "• Đã chỉnh sửa",
+  "createPostEditTitle": "Chỉnh sửa bài viết",
+  "createPostContentRequired": "Vui lòng nhập nội dung hoặc chọn ảnh/video/GIF",
+  "createPostAlbumFeature": "Tính năng album đang phát triển",
+  "createPostUploadingImages": "Đang tải ảnh lên...",
+  "createPostUploadingVideo": "Đang tải video lên...",
+  "createPostProcessing": "Đang xử lý...",
+  "createPostUploadProgress": "{percent}% Hoàn tất",
+  "@createPostUploadProgress": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "aiAssistantGetSuggestions": "Nhận gợi ý từ AI",
+  "aiAssistantLoading": "Đang tải...",
+  "aiAssistantTitle": "Gợi ý từ AI",
+  "aiAssistantCaption": "Caption cải thiện",
+  "aiAssistantHashtags": "Hashtags gợi ý",
+  "aiAssistantTranslation": "Bản dịch",
+  "aiAssistantSentiment": "Phân tích cảm xúc",
+  "aiAssistantCaptionApplied": "Đã áp dụng caption",
+  "aiAssistantHashtagsApplied": "Đã thêm hashtags",
+  "aiAssistantTranslationApplied": "Đã áp dụng bản dịch",
+  "aiAssistantEmptyContent": "Vui lòng nhập nội dung hoặc chọn ảnh để nhận gợi ý từ AI",
+  "aiAssistantError": "Không thể tạo gợi ý. Vui lòng thử lại.",
+  "aiAssistantLoadError": "Lỗi tải gợi ý AI"
+}
+
