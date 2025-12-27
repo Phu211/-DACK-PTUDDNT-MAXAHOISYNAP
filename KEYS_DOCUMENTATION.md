@@ -2,7 +2,7 @@
 
 ## 1. Giphy API Key
 
-**Key:** `vjL8RYarNQuZGwqjfCUxtebt2ItPxZxS`
+**Key:** `YOUR_GIPHY_API_KEY` (placeholder - cần thay thế bằng key thực tế)
 
 **Vị trí:** 
 - `lib/presentation/screens/messages/chat_screen.dart`
